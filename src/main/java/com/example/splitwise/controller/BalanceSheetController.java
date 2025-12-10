@@ -3,6 +3,7 @@ package com.example.splitwise.controller;
 import com.example.splitwise.dto.ApiResponse;
 import com.example.splitwise.dto.BalanceDetail;
 import com.example.splitwise.dto.BalanceSheetResponse;
+import com.example.splitwise.dto.OutstandingBalanceResponse;
 import com.example.splitwise.dto.UserBalanceSummaryResponse;
 import com.example.splitwise.entities.User;
 import com.example.splitwise.entities.UserExpenseBalanceSheet;
@@ -24,6 +25,30 @@ public class BalanceSheetController {
 
     private final BalanceSheetService balanceSheetService;
     private final UserService userService;
+
+    @GetMapping("/{userId}/outstanding")
+    public ResponseEntity<ApiResponse<OutstandingBalanceResponse>> getOutstandingBalance(@PathVariable String userId) {
+        try {
+            User user = userService.getUserById(userId);
+            UserExpenseBalanceSheet balanceSheet = balanceSheetService.getUserBalanceSheet(user);
+            
+            Double totalOwe = balanceSheet.getTotalYouOwe();
+            Double totalReceive = balanceSheet.getTotalYouGetBack();
+            Double netOutstanding = totalReceive - totalOwe;
+            
+            OutstandingBalanceResponse response = OutstandingBalanceResponse.builder()
+                    .userId(userId)
+                    .totalOutstandingOwe(totalOwe)
+                    .totalOutstandingReceive(totalReceive)
+                    .netOutstanding(netOutstanding)
+                    .build();
+            
+            return ResponseEntity.ok(ApiResponse.success(response));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
 
     @GetMapping("/{userId}/summary")
     public ResponseEntity<ApiResponse<UserBalanceSummaryResponse>> getUserBalanceSummary(@PathVariable String userId) {
