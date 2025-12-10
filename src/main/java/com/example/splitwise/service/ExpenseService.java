@@ -4,6 +4,7 @@ package com.example.splitwise.service;
 import com.example.splitwise.dto.CreateExpenseRequest;
 import com.example.splitwise.dto.PaymentDetail;
 import com.example.splitwise.dto.SplitDetail;
+import com.example.splitwise.dto.UserExpenseResponse;
 import com.example.splitwise.entities.Expense;
 import com.example.splitwise.entities.ExpensePayment;
 import com.example.splitwise.entities.Split;
@@ -17,7 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -151,8 +155,59 @@ public class ExpenseService {
         return expenseRepository.findByGroup_GroupId(groupId);
     }
 
-    public List<Expense> getExpensesByUser(String userId) {
-        return expenseRepository.findByPayments_User_UserId(userId);
+    public List<UserExpenseResponse> getExpensesByUser(String userId) {
+        
+        // Find list of all expenses where user is in split
+        List<Expense> expensesInSplits = expenseRepository.findExpensesByUserInSplits(userId);
+
+        // Find list of all expenses where user is in payment
+        List<Expense> expensesInPayments = expenseRepository.findExpensesByUserInPayments(userId);
+
+        // Consolidate expenses removing duplicates
+        Set<Expense> consolidatedExpenses = new LinkedHashSet<>();
+        consolidatedExpenses.addAll(expensesInSplits);
+        consolidatedExpenses.addAll(expensesInPayments);
+
+        // Calculate user's share for each expense and return sorted by date
+        return consolidatedExpenses.stream()
+                .sorted(Comparator.comparing(Expense::getDate).reversed())
+                .map(expense -> mapToUserExpenseResponse(expense, userId))
+                .collect(Collectors.toList());
+    }
+
+    private UserExpenseResponse mapToUserExpenseResponse(Expense expense, String userId) {
+        // Calculate amount paid by user in this expense
+        double amountPaid = expense.getPayments().stream()
+                .filter(payment -> payment.getUser().getUserId().equals(userId))
+                .mapToDouble(ExpensePayment::getAmountPaid)
+                .sum();
+
+        // Calculate amount owed by user in this expense
+        double amountOwed = expense.getSplits().stream()
+                .filter(split -> split.getUser().getUserId().equals(userId))
+                .mapToDouble(Split::getAmountOwe)
+                .sum();
+
+        // userShare = amountPaid - amountOwed
+        // Positive: user gets back this amount
+        // Negative: user owes this amount
+        double userShare = amountPaid - amountOwed;
+
+        return UserExpenseResponse.builder()
+                .expenseId(expense.getExpenseId())
+                .description(expense.getDescription())
+                .expenseAmount(expense.getExpenseAmount())
+                .payments(expense.getPayments().stream()
+                        .map(p -> new PaymentDetail(p.getUser().getUserId(), p.getAmountPaid()))
+                        .collect(Collectors.toList()))
+                .splitType(expense.getSplitType())
+                .splits(expense.getSplits().stream()
+                        .map(s -> new SplitDetail(s.getUser().getUserId(), s.getAmountOwe()))
+                        .collect(Collectors.toList()))
+                .groupId(expense.getGroup() != null ? expense.getGroup().getGroupId() : null)
+                .date(expense.getDate())
+                .userShare(userShare)
+                .build();
     }
 
     public List<Expense> getAllExpenses() {

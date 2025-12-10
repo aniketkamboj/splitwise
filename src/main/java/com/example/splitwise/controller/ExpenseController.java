@@ -83,11 +83,9 @@ public class ExpenseController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<ApiResponse<List<ExpenseResponse>>> getExpensesByUser(@PathVariable String userId) {
+    public ResponseEntity<ApiResponse<List<UserExpenseResponse>>> getExpensesByUser(@PathVariable String userId) {
         try {
-            List<ExpenseResponse> expenses = expenseService.getExpensesByUser(userId).stream()
-                    .map(this::mapToExpenseResponse)
-                    .collect(Collectors.toList());
+            List<UserExpenseResponse> expenses = expenseService.getExpensesByUser(userId);
             return ResponseEntity.ok(ApiResponse.success(expenses));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
