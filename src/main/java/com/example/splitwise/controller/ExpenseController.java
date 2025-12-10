@@ -20,26 +20,16 @@ import java.util.stream.Collectors;
 public class ExpenseController {
 
     private final ExpenseService expenseService;
-    private final GroupService groupService;
 
-    public ExpenseController(ExpenseService expenseService, GroupService groupService) {
+    public ExpenseController(ExpenseService expenseService) {
         this.expenseService = expenseService;
-        this.groupService = groupService;
     }
 
 
     @PostMapping
     public ResponseEntity<ApiResponse<ExpenseResponse>> createExpense(@Valid @RequestBody CreateExpenseRequest request) {
         try {
-            Expense expense;
-
-            if (request.getGroupId() != null && !request.getGroupId().isEmpty()) {
-                Group group = groupService.getGroupById(request.getGroupId());
-                expense = expenseService.createExpenseWithGroup(request);
-            } else {
-                expense = expenseService.createExpense(request);
-            }
-
+            Expense expense = expenseService.createExpense(request);
             ExpenseResponse response = mapToExpenseResponse(expense);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("Expense created successfully", response));

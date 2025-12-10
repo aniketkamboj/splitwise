@@ -1,11 +1,13 @@
 package com.example.splitwise.strategy;
 
+import com.example.splitwise.dto.SplitDetail;
 import com.example.splitwise.entities.Split;
 import com.example.splitwise.entities.User;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class PercentageExpenseSplit implements ExpenseSplit {
@@ -15,7 +17,7 @@ public class PercentageExpenseSplit implements ExpenseSplit {
         double totalPercentage = splits.stream()
                 .mapToDouble(split -> (split.getAmountOwe() / totalAmount) * 100)
                 .sum();
-        
+
         if (Math.abs(totalPercentage - 100.0) > 0.01) {
             throw new IllegalArgumentException(
                     "Total percentage " + totalPercentage + " doesn't equal 100%"
@@ -24,26 +26,30 @@ public class PercentageExpenseSplit implements ExpenseSplit {
     }
 
     @Override
-    public List<Split> validateAndGetSplits(List<User> users, List<Double> splitAmounts, Double totalAmount) {
-        if (users.size() != splitAmounts.size()) {
+    public List<Split> validateAndGetSplits(List<User> users, Double totalAmount,List<SplitDetail> splitDetails) {
+        if (users.size() != splitDetails.size()) {
             throw new IllegalArgumentException(
-                    "Number of users (" + users.size() + ") must match number of percentages (" + splitAmounts.size() + ")"
+                    "Number of users (" + users.size() + ") must match number of percentages (" + splitDetails.size() + ")"
             );
         }
-        
-        double totalPercentage = splitAmounts.stream().mapToDouble(Double::doubleValue).sum();
+        List<Double> percentages = splitDetails.stream()
+                .map(SplitDetail::getAmount)
+                .toList();
+
+        double totalPercentage = percentages.stream().mapToDouble(Double::doubleValue).sum();
+
         if (Math.abs(totalPercentage - 100.0) > 0.01) {
             throw new IllegalArgumentException(
                     "Total percentage " + totalPercentage + " must equal 100%"
             );
         }
-        
+
         List<Split> splits = new ArrayList<>();
         for (int i = 0; i < users.size(); i++) {
-            double amountOwe = (splitAmounts.get(i) / 100.0) * totalAmount;
+            double amountOwe = (percentages.get(i) / 100.0) * totalAmount;
             splits.add(new Split(users.get(i), amountOwe));
         }
-        
+
         return splits;
     }
 }

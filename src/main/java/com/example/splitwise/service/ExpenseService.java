@@ -5,10 +5,7 @@ import com.example.splitwise.dto.CreateExpenseRequest;
 import com.example.splitwise.dto.PaymentDetail;
 import com.example.splitwise.dto.SplitDetail;
 import com.example.splitwise.dto.UserExpenseResponse;
-import com.example.splitwise.entities.Expense;
-import com.example.splitwise.entities.ExpensePayment;
-import com.example.splitwise.entities.Split;
-import com.example.splitwise.entities.User;
+import com.example.splitwise.entities.*;
 import com.example.splitwise.enums.ExpenseSplitType;
 import com.example.splitwise.repository.ExpenseRepository;
 import com.example.splitwise.strategy.ExpenseSplit;
@@ -32,17 +29,18 @@ public class ExpenseService {
     private final SplitFactory splitFactory;
     private final BalanceSheetService balanceSheetService;
     private final UserService userService;
+    private final GroupService groupService;
 
-    public ExpenseService(ExpenseRepository expenseRepository, SplitFactory splitFactory, BalanceSheetService balanceSheetService, UserService userService) {
+    public ExpenseService(ExpenseRepository expenseRepository, SplitFactory splitFactory, BalanceSheetService balanceSheetService, UserService userService, GroupService groupService) {
         this.expenseRepository = expenseRepository;
         this.splitFactory = splitFactory;
         this.balanceSheetService = balanceSheetService;
         this.userService = userService;
+        this.groupService = groupService;
     }
 
     @Transactional
     public Expense createExpense(CreateExpenseRequest request) {
-
         String expenseId = request.getExpenseId();
         if (expenseId == null || expenseId.isEmpty()) {
             expenseId = generateExpenseId();
@@ -51,26 +49,22 @@ public class ExpenseService {
             throw new IllegalArgumentException("Expense with expenseId " + expenseId + " already exists");
         }
 
+        double expenseAmount = request.getExpenseAmount();
         // Create ExpensePayment objects from PaymentDetail DTOs
         List<ExpensePayment> payments = createPayments(request.getPayments());
-        ExpenseSplit expenseSplit = splitFactory.getSplitObject(request.getSplitType());
-        List<Split> splits = createSplits(request);
-
-
 
         // Validate that total payments match expense amount
         double totalPaid = payments.stream()
                 .mapToDouble(ExpensePayment::getAmountPaid)
                 .sum();
-        
+
         if (Math.abs(totalPaid - expenseAmount) > 0.01) {
             throw new IllegalArgumentException(
                     "Total payments (" + totalPaid + ") must equal expense amount (" + expenseAmount + ")"
             );
         }
 
-
-        expenseSplit.validateSplitRequest(splits, expenseAmount);
+        List<Split> splits = createSplits(request);
 
         Expense expense = Expense.builder()
                 .expenseId(expenseId)
@@ -82,51 +76,10 @@ public class ExpenseService {
                 .date(LocalDate.now())
                 .build();
 
-        // Set expense reference in payments
-        for (ExpensePayment payment : payments) {
-            payment.setExpense(expense);
+        if(request.getGroupId() != null) {
+            Group group = groupService.getGroupById(request.getGroupId());
+            expense.setGroup(group);
         }
-
-        // Set expense reference in splits
-        for (Split split : splits) {
-            split.setExpense(expense);
-        }
-
-        Expense savedExpense = expenseRepository.save(expense);
-
-        // Update balance sheets for all payers
-        balanceSheetService.updateUserExpenseBalanceSheet(payments, splits, expenseAmount);
-
-        return savedExpense;
-    }
-
-    @Transactional
-    public Expense createExpenseWithGroup(CreateExpenseRequest request) {
-        
-        // Validate that total payments match expense amount
-        double totalPaid = payments.stream()
-                .mapToDouble(ExpensePayment::getAmountPaid)
-                .sum();
-        
-        if (Math.abs(totalPaid - expenseAmount) > 0.01) {
-            throw new IllegalArgumentException(
-                    "Total payments (" + totalPaid + ") must equal expense amount (" + expenseAmount + ")"
-            );
-        }
-        
-        ExpenseSplit expenseSplit = splitFactory.getSplitObject(splitType);
-        expenseSplit.validateSplitRequest(splits, expenseAmount);
-
-        Expense expense = Expense.builder()
-                .expenseId(expenseId)
-                .expenseAmount(expenseAmount)
-                .description(description)
-                .payments(payments)
-                .splitType(splitType)
-                .splits(splits)
-                .group(group)
-                .date(LocalDate.now())
-                .build();
 
         // Set expense reference in payments
         for (ExpensePayment payment : payments) {
@@ -232,35 +185,19 @@ public class ExpenseService {
     }
 
     private List<Split> createSplits(CreateExpenseRequest request) {
+        ExpenseSplitType splitType = request.getSplitType();
         if (request.getSplits() == null || request.getSplits().isEmpty()) {
             throw new IllegalArgumentException("Split details are required for " + splitType + " split");
         }
         List<User> users = request.getSplits().stream()
                 .map(split -> userService.getUserById(split.getUserId()))
                 .collect(Collectors.toList());
-        ExpenseSplitType splitType = request.getSplitType();
+        Double totalAmount = request.getExpenseAmount();
+        List<SplitDetail> splitDetails = request.getSplits();
+
         ExpenseSplit expenseSplit = splitFactory.getSplitObject(splitType);
-
         List<Split> splits = new ArrayList<>();
-
-        if (splitType == ExpenseSplitType.EQUAL) {
-            splits = expenseSplit.validateAndGetSplits(users, null, request.getExpenseAmount());
-        } else {
-            if (splitType == ExpenseSplitType.PERCENTAGE) {
-                List<Double> percentages = request.getSplits().stream()
-                        .map(SplitDetail::getAmount)
-                        .collect(Collectors.toList());
-                splits = expenseSplit.validateAndGetSplits(users, percentages, request.getExpenseAmount());
-            } else {
-                // UNEQUAL or EXACT
-                for (SplitDetail splitDetail : request.getSplits()) {
-                    User user = userService.getUserById(splitDetail.getUserId());
-                    splits.add(new Split(user, splitDetail.getAmount()));
-                }
-                expenseSplit.validateSplitRequest(splits, request.getExpenseAmount());
-            }
-        }
-
+        splits = expenseSplit.validateAndGetSplits(users, totalAmount, splitDetails);
         return splits;
     }
 }
