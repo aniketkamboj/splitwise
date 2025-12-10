@@ -20,7 +20,7 @@ public class UserExpenseResponse {
     private List<PaymentDetail> payments;
     private ExpenseSplitType splitType;
     private List<SplitDetail> splits;
-    private String groupId;
+    private String groupName;
     private LocalDate date;
     
     // User's share in this expense

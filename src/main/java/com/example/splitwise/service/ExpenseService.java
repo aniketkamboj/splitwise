@@ -204,7 +204,7 @@ public class ExpenseService {
                 .splits(expense.getSplits().stream()
                         .map(s -> new SplitDetail(s.getUser().getUserId(), s.getAmountOwe()))
                         .collect(Collectors.toList()))
-                .groupId(expense.getGroup() != null ? expense.getGroup().getGroupId() : null)
+                .groupName(expense.getGroup() != null ? expense.getGroup().getGroupName() : null)
                 .date(expense.getDate())
                 .userShare(userShare)
                 .build();
