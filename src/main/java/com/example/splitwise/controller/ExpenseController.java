@@ -69,6 +69,7 @@ public class ExpenseController {
         return ResponseEntity.ok(ApiResponse.success(expenses));
     }
 
+    /*todo not required remove this api and its respective methods*/
     @GetMapping("/group/{groupId}")
     public ResponseEntity<ApiResponse<List<ExpenseResponse>>> getExpensesByGroup(@PathVariable String groupId) {
         try {
