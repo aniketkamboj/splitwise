@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -20,5 +21,6 @@ public class ExpenseResponse {
     private ExpenseSplitType splitType;
     private List<SplitDetail> splits;
     private String groupId;
+    private LocalDate date;
 }
 

@@ -124,6 +124,7 @@ public class ExpenseController {
                 .splitType(expense.getSplitType())
                 .splits(splitDetails)
                 .groupId(groupId)
+                .date(expense.getDate())
                 .build();
     }
 }
