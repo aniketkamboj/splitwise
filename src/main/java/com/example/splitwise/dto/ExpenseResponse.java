@@ -16,7 +16,7 @@ public class ExpenseResponse {
     private String expenseId;
     private String description;
     private Double expenseAmount;
-    private String paidByUserId;
+    private List<PaymentDetail> payments; // List of users who paid and their amounts
     private ExpenseSplitType splitType;
     private List<SplitDetail> splits;
     private String groupId;

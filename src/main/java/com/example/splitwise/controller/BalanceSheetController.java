@@ -3,7 +3,6 @@ package com.example.splitwise.controller;
 import com.example.splitwise.dto.ApiResponse;
 import com.example.splitwise.dto.BalanceDetail;
 import com.example.splitwise.dto.BalanceSheetResponse;
-import com.example.splitwise.entities.Balance;
 import com.example.splitwise.entities.User;
 import com.example.splitwise.entities.UserExpenseBalanceSheet;
 import com.example.splitwise.service.BalanceSheetService;

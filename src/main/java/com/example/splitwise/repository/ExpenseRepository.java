@@ -12,6 +12,6 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     Optional<Expense> findByExpenseId(String expenseId);
     boolean existsByExpenseId(String expenseId);
     List<Expense> findByGroup_GroupId(String groupId);
-    List<Expense> findByPaidBy_UserId(String userId);
+    List<Expense> findByPayments_User_UserId(String userId);
 }
 

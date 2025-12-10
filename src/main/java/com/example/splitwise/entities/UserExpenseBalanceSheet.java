@@ -43,14 +43,6 @@ public class UserExpenseBalanceSheet {
     @Transient
     private Map<String, Balance> userVsBalance;
 
-    public UserExpenseBalanceSheet() {
-        this.totalPayment = 0.0;
-        this.totalYourExpense = 0.0;
-        this.totalYouGetBack = 0.0;
-        this.totalYouOwe = 0.0;
-        this.balances = new ArrayList<>();
-        this.userVsBalance = new HashMap<>();
-    }
 
     public Map<String, Balance> getUserVsBalance() {
         if (userVsBalance == null) {

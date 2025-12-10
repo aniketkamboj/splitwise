@@ -11,10 +11,10 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Data
 public class CreateExpenseRequest {
     
     private String expenseId; // Optional, will be generated if not provided
@@ -26,16 +26,15 @@ public class CreateExpenseRequest {
     @Positive(message = "Expense amount must be positive")
     private Double expenseAmount;
     
-    @NotBlank(message = "Paid by user ID is required")
-    private String paidByUserId;
+    @NotNull(message = "Payments are required")
+    private List<PaymentDetail> payments; // List of users who paid and their amounts
     
     @NotNull(message = "Split type is required")
     private ExpenseSplitType splitType;
     
     private List<SplitDetail> splits; // Required for UNEQUAL, PERCENTAGE, EXACT splits
     
-    private List<String> userIds; // Required for EQUAL split
-    
     private String groupId; // Optional, if expense is part of a group
+
 }
 

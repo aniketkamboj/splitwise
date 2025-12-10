@@ -1,67 +1,43 @@
 package com.example.splitwise.controller;
 
 import com.example.splitwise.dto.*;
-import com.example.splitwise.entities.Expense;
-import com.example.splitwise.entities.Split;
-import com.example.splitwise.entities.User;
-import com.example.splitwise.enums.ExpenseSplitType;
+import com.example.splitwise.entities.*;
 import com.example.splitwise.service.ExpenseService;
 import com.example.splitwise.service.GroupService;
 import com.example.splitwise.service.UserService;
-import com.example.splitwise.strategy.ExpenseSplit;
 import com.example.splitwise.strategy.SplitFactory;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
+
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/expenses")
-@RequiredArgsConstructor
 public class ExpenseController {
 
     private final ExpenseService expenseService;
-    private final UserService userService;
     private final GroupService groupService;
-    private final SplitFactory splitFactory;
+
+    public ExpenseController(ExpenseService expenseService, GroupService groupService) {
+        this.expenseService = expenseService;
+        this.groupService = groupService;
+    }
+
 
     @PostMapping
     public ResponseEntity<ApiResponse<ExpenseResponse>> createExpense(@Valid @RequestBody CreateExpenseRequest request) {
         try {
-            String expenseId = request.getExpenseId();
-            if (expenseId == null || expenseId.isEmpty()) {
-                expenseId = expenseService.generateExpenseId();
-            }
-
-            List<Split> splits = createSplits(request);
             Expense expense;
 
             if (request.getGroupId() != null && !request.getGroupId().isEmpty()) {
-                com.example.splitwise.entities.Group group = groupService.getGroupById(request.getGroupId());
-                expense = expenseService.createExpenseWithGroup(
-                        expenseId,
-                        request.getDescription(),
-                        request.getExpenseAmount(),
-                        splits,
-                        request.getSplitType(),
-                        request.getPaidByUserId(),
-                        group
-                );
+                Group group = groupService.getGroupById(request.getGroupId());
+                expense = expenseService.createExpenseWithGroup(request);
             } else {
-                expense = expenseService.createExpense(
-                        expenseId,
-                        request.getDescription(),
-                        request.getExpenseAmount(),
-                        splits,
-                        request.getSplitType(),
-                        request.getPaidByUserId()
-                );
+                expense = expenseService.createExpense(request);
             }
 
             ExpenseResponse response = mapToExpenseResponse(expense);
@@ -119,46 +95,6 @@ public class ExpenseController {
         }
     }
 
-    private List<Split> createSplits(CreateExpenseRequest request) {
-        ExpenseSplitType splitType = request.getSplitType();
-        ExpenseSplit expenseSplit = splitFactory.getSplitObject(splitType);
-
-        List<Split> splits = new ArrayList<>();
-
-        if (splitType == ExpenseSplitType.EQUAL) {
-            if (request.getUserIds() == null || request.getUserIds().isEmpty()) {
-                throw new IllegalArgumentException("User IDs are required for EQUAL split");
-            }
-            List<User> users = request.getUserIds().stream()
-                    .map(userService::getUserById)
-                    .collect(Collectors.toList());
-            splits = expenseSplit.validateAndGetSplits(users, null, request.getExpenseAmount());
-        } else {
-            if (request.getSplits() == null || request.getSplits().isEmpty()) {
-                throw new IllegalArgumentException("Split details are required for " + splitType + " split");
-            }
-            
-            if (splitType == ExpenseSplitType.PERCENTAGE) {
-                List<User> users = request.getSplits().stream()
-                        .map(split -> userService.getUserById(split.getUserId()))
-                        .collect(Collectors.toList());
-                List<Double> percentages = request.getSplits().stream()
-                        .map(SplitDetail::getAmount)
-                        .collect(Collectors.toList());
-                splits = expenseSplit.validateAndGetSplits(users, percentages, request.getExpenseAmount());
-            } else {
-                // UNEQUAL or EXACT
-                for (SplitDetail splitDetail : request.getSplits()) {
-                    User user = userService.getUserById(splitDetail.getUserId());
-                    splits.add(new Split(user, splitDetail.getAmount()));
-                }
-                expenseSplit.validateSplitRequest(splits, request.getExpenseAmount());
-            }
-        }
-
-        return splits;
-    }
-
     private ExpenseResponse mapToExpenseResponse(Expense expense) {
         List<SplitDetail> splitDetails = expense.getSplits() != null
                 ? expense.getSplits().stream()
@@ -169,13 +105,22 @@ public class ExpenseController {
                         .collect(Collectors.toList())
                 : List.of();
 
+        List<PaymentDetail> paymentDetails = expense.getPayments() != null
+                ? expense.getPayments().stream()
+                        .map(payment -> PaymentDetail.builder()
+                                .userId(payment.getUser().getUserId())
+                                .amountPaid(payment.getAmountPaid())
+                                .build())
+                        .collect(Collectors.toList())
+                : List.of();
+
         String groupId = expense.getGroup() != null ? expense.getGroup().getGroupId() : null;
 
         return ExpenseResponse.builder()
                 .expenseId(expense.getExpenseId())
                 .description(expense.getDescription())
                 .expenseAmount(expense.getExpenseAmount())
-                .paidByUserId(expense.getPaidBy().getUserId())
+                .payments(paymentDetails)
                 .splitType(expense.getSplitType())
                 .splits(splitDetails)
                 .groupId(groupId)

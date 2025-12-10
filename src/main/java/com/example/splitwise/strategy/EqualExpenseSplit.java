@@ -24,7 +24,7 @@ public class EqualExpenseSplit implements ExpenseSplit {
     }
 
     @Override
-    public List<Split> validateAndGetSplits(List<User> users, List<Double> splitAmounts, Double totalAmount) {
+    public List<Split> validateAndGetSplits(List<User> users, List<Double> splitAmounts, Double totalAmount,List<Split> splits) {
         if (users.isEmpty()) {
             throw new IllegalArgumentException("Users list cannot be empty");
         }

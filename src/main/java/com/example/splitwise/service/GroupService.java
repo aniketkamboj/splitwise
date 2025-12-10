@@ -3,7 +3,6 @@ package com.example.splitwise.service;
 import com.example.splitwise.entities.Group;
 import com.example.splitwise.entities.User;
 import com.example.splitwise.repository.GroupRepository;
-import com.example.splitwise.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

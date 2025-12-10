@@ -31,9 +31,8 @@ public class Expense {
     @Column(nullable = false)
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "paid_by_user_id", nullable = false)
-    private User paidBy;
+    @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ExpensePayment> payments;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -47,13 +46,18 @@ public class Expense {
     private Group group;
 
     public Expense(String expenseId, Double expenseAmount, String description, 
-                   User paidBy, ExpenseSplitType splitType, List<Split> splits) {
+                   List<ExpensePayment> payments, ExpenseSplitType splitType, List<Split> splits) {
         this.expenseId = expenseId;
         this.expenseAmount = expenseAmount;
         this.description = description;
-        this.paidBy = paidBy;
+        this.payments = payments != null ? payments : new ArrayList<>();
         this.splitType = splitType;
         this.splits = splits != null ? splits : new ArrayList<>();
+        
+        // Set expense reference in payments
+        for (ExpensePayment payment : this.payments) {
+            payment.setExpense(this);
+        }
         
         // Set expense reference in splits
         for (Split split : this.splits) {
