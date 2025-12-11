@@ -26,17 +26,17 @@ public class Expense {
     @Column(unique = true, nullable = false)
     private String expenseId;
 
-    @Column(nullable = false)
+    @Column 
     private Double expenseAmount;
 
-    @Column(nullable = false)
+    @Column 
     private String description;
 
     @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ExpensePayment> payments;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column 
     private ExpenseSplitType splitType;
 
     @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -46,7 +46,7 @@ public class Expense {
     @JoinColumn(name = "group_id")
     private Group group;
 
-    @Column(nullable = false)
+    @Column 
     private LocalDate date;
 
     public Expense(String expenseId, Double expenseAmount, String description, 

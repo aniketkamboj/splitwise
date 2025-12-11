@@ -65,6 +65,19 @@ public class ExpenseService {
         }
 
         List<Split> splits = createSplits(request);
+        
+//        // Validate that all payment users are present in splits
+//        Set<User> splitUsers = splits.stream()
+//                .map(Split::getUser)
+//                .collect(Collectors.toSet());
+//
+//        for (ExpensePayment payment : payments) {
+//            if (!splitUsers.contains(payment.getUser())) {
+//                throw new IllegalArgumentException(
+//                        "User " + payment.getUser().getUserId() + " in payments is not present in splits"
+//                );
+//            }
+//        }
 
         Expense expense = Expense.builder()
                 .expenseId(expenseId)
@@ -114,15 +127,15 @@ public class ExpenseService {
         List<Expense> expensesInSplits = expenseRepository.findExpensesByUserInSplits(userId);
 
         // Find list of all expenses where user is in payment
-        List<Expense> expensesInPayments = expenseRepository.findExpensesByUserInPayments(userId);
+//        List<Expense> expensesInPayments = expenseRepository.findExpensesByUserInPayments(userId);
 
         // Consolidate expenses removing duplicates
-        Set<Expense> consolidatedExpenses = new LinkedHashSet<>();
-        consolidatedExpenses.addAll(expensesInSplits);
-        consolidatedExpenses.addAll(expensesInPayments);
+//        Set<Expense> consolidatedExpenses = new LinkedHashSet<>();
+//        consolidatedExpenses.addAll(expensesInSplits);
+//        consolidatedExpenses.addAll(expensesInPayments);
 
         // Calculate user's share for each expense and return sorted by date
-        return consolidatedExpenses.stream()
+        return expensesInSplits.stream()
                 .sorted(Comparator.comparing(Expense::getDate).reversed())
                 .map(expense -> mapToUserExpenseResponse(expense, userId))
                 .collect(Collectors.toList());

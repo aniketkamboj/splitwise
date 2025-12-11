@@ -5,6 +5,7 @@ import com.example.splitwise.dto.BalanceDetail;
 import com.example.splitwise.dto.BalanceSheetResponse;
 import com.example.splitwise.dto.OutstandingBalanceResponse;
 import com.example.splitwise.dto.UserBalanceSummaryResponse;
+import com.example.splitwise.entities.Balance;
 import com.example.splitwise.entities.User;
 import com.example.splitwise.entities.UserExpenseBalanceSheet;
 import com.example.splitwise.service.BalanceSheetService;
@@ -32,8 +33,17 @@ public class BalanceSheetController {
             User user = userService.getUserById(userId);
             UserExpenseBalanceSheet balanceSheet = balanceSheetService.getUserBalanceSheet(user);
             
-            Double totalOwe = balanceSheet.getTotalYouOwe();
-            Double totalReceive = balanceSheet.getTotalYouGetBack();
+            // Calculate totals by iterating through each user's balance
+            Double totalOwe = 0.0;
+            Double totalReceive = 0.0;
+            
+            if (balanceSheet.getUserVsBalance() != null) {
+                for (Balance balance : balanceSheet.getUserVsBalance().values()) {
+                    totalOwe += balance.getAmountOwe() != null ? balance.getAmountOwe() : 0.0;
+                    totalReceive += balance.getAmountGetBack() != null ? balance.getAmountGetBack() : 0.0;
+                }
+            }
+            
             Double netOutstanding = totalReceive - totalOwe;
             
             OutstandingBalanceResponse response = OutstandingBalanceResponse.builder()
@@ -101,7 +111,6 @@ public class BalanceSheetController {
         return BalanceSheetResponse.builder()
                 .userId(userId)
                 .totalPayment(balanceSheet.getTotalPayment())
-                .totalYourExpense(balanceSheet.getTotalYourExpense())
                 .totalYouGetBack(balanceSheet.getTotalYouGetBack())
                 .totalYouOwe(balanceSheet.getTotalYouOwe())
                 .userVsBalance(userVsBalance)

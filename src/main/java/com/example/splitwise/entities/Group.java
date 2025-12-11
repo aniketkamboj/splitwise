@@ -24,7 +24,7 @@ public class Group {
     @Column(unique = true, nullable = false)
     private String groupId;
 
-    @Column(nullable = false)
+    @Column
     private String groupName;
 
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)

@@ -12,7 +12,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-
     private final UserRepository userRepository;
 
     @Transactional
@@ -32,11 +31,12 @@ public class UserService {
                 .mobileNumber(mobileNumber)
                 .build();
 
-        // Initialize balance sheet
+        // Initialize balance sheet - let cascade handle the save
         UserExpenseBalanceSheet balanceSheet = new UserExpenseBalanceSheet();
         balanceSheet.setUser(user);
         user.setUserExpenseBalanceSheet(balanceSheet);
 
+        // Save user - cascade will automatically save the balance sheet
         return userRepository.save(user);
     }
 

@@ -22,7 +22,7 @@ public class Split {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false)
+    @Column
     private Double amountOwe;
 
     @ManyToOne(fetch = FetchType.LAZY)

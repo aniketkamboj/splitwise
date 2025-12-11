@@ -14,12 +14,11 @@ public class SplitFactory {
 
     @Autowired
     public SplitFactory(EqualExpenseSplit equalExpenseSplit,
-                       UnequalExpenseSplit unequalExpenseSplit,
                        PercentageExpenseSplit percentageExpenseSplit,
                        ExactExpenseSplit exactExpenseSplit) {
         this.splitStrategies = new HashMap<>();
         this.splitStrategies.put(ExpenseSplitType.EQUAL, equalExpenseSplit);
-        this.splitStrategies.put(ExpenseSplitType.UNEQUAL, unequalExpenseSplit);
+        this.splitStrategies.put(ExpenseSplitType.UNEQUAL, exactExpenseSplit);
         this.splitStrategies.put(ExpenseSplitType.PERCENTAGE, percentageExpenseSplit);
         this.splitStrategies.put(ExpenseSplitType.EXACT, exactExpenseSplit);
     }

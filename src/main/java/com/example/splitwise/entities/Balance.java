@@ -18,11 +18,11 @@ public class Balance {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column  
     @Builder.Default
     private Double amountOwe = 0.0;
 
-    @Column(nullable = false)
+    @Column  
     @Builder.Default
     private Double amountGetBack = 0.0;
 
@@ -30,7 +30,7 @@ public class Balance {
     @JoinColumn(name = "balance_sheet_id", nullable = false)
     private UserExpenseBalanceSheet balanceSheet;
 
-    @Column(nullable = false)
+    @Column  
     private String userId; // The other user ID this balance is for
 }
 

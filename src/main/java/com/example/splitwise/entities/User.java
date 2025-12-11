@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @Table(name = "users")
 @Data
@@ -21,15 +23,19 @@ public class User {
     @Column(unique = true, nullable = false)
     private String userId;
 
-    @Column(nullable = false)
+    @Column
     private String name;
 
     @Column(unique = true)
     private String email;
 
+    @Column
     private String mobileNumber;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Split> splits;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private UserExpenseBalanceSheet userExpenseBalanceSheet;
 
     public UserExpenseBalanceSheet getUserExpenseBalanceSheet() {

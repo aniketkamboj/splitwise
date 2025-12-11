@@ -32,6 +32,11 @@ public class BalanceSheetService {
                         (existing, replacement) -> existing + replacement // Sum if same user paid multiple times
                 ));
 
+        // Calculate total payment amount for proportional distribution
+        double totalPaid = payments.stream()
+                .mapToDouble(ExpensePayment::getAmountPaid)
+                .sum();
+
         // Update total payment for all users who paid
         for (ExpensePayment payment : payments) {
             User payingUser = payment.getUser();
@@ -50,14 +55,12 @@ public class BalanceSheetService {
             // Check if this user also paid for this expense
             Double amountPaidByOweUser = userPayments.getOrDefault(userOwe.getUserId(), 0.0);
 
-            if (amountPaidByOweUser > 0) {
-                // User paid and owes - update their own expense
-                oweUserExpenseSheet.setTotalYourExpense(
-                        oweUserExpenseSheet.getTotalYourExpense() + oweAmount
-                );
-            }
+            // Update total owe for the user who owes (full amount, not proportional)
+            oweUserExpenseSheet.setTotalYouOwe(
+                    oweUserExpenseSheet.getTotalYouOwe() + oweAmount
+            );
 
-            // For each payer, update balances
+            // For each payer, update balances proportionally
             for (ExpensePayment payment : payments) {
                 User payingUser = payment.getUser();
                 
@@ -66,28 +69,29 @@ public class BalanceSheetService {
                     continue;
                 }
 
+                // Calculate proportional amount this payer should get back from the owe user
+                // Based on how much this payer contributed to the total payment
+                double payerProportion = payment.getAmountPaid() / totalPaid;
+                double proportionalOweAmount = oweAmount * payerProportion;
+
                 UserExpenseBalanceSheet payerBalanceSheet = payingUser.getUserExpenseBalanceSheet();
 
-                // Payer gets back money from the user who owes
+                // Payer gets back proportional money from the user who owes
                 payerBalanceSheet.setTotalYouGetBack(
-                        payerBalanceSheet.getTotalYouGetBack() + oweAmount
+                        payerBalanceSheet.getTotalYouGetBack() + proportionalOweAmount
                 );
 
+                // Update individual balance: payer gets back proportional amount from owe user
                 Balance userOweBalance = getOrCreateBalance(
                         payerBalanceSheet, userOwe.getUserId()
                 );
-                userOweBalance.setAmountGetBack(userOweBalance.getAmountGetBack() + oweAmount);
+                userOweBalance.setAmountGetBack(userOweBalance.getAmountGetBack() + proportionalOweAmount);
 
-                // User who owes has debt to the payer
-                oweUserExpenseSheet.setTotalYouOwe(oweUserExpenseSheet.getTotalYouOwe() + oweAmount);
-                oweUserExpenseSheet.setTotalYourExpense(
-                        oweUserExpenseSheet.getTotalYourExpense() + oweAmount
-                );
-
+                // Update individual balance: owe user owes proportional amount to payer
                 Balance userPaidBalance = getOrCreateBalance(
                         oweUserExpenseSheet, payingUser.getUserId()
                 );
-                userPaidBalance.setAmountOwe(userPaidBalance.getAmountOwe() + oweAmount);
+                userPaidBalance.setAmountOwe(userPaidBalance.getAmountOwe() + proportionalOweAmount);
             }
         }
 

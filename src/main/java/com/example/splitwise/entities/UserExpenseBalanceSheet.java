@@ -22,20 +22,17 @@ public class UserExpenseBalanceSheet {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JoinColumn(name = "user_id", unique = true)
     private User user;
 
-    @Column(nullable = false)
-    private Double totalPayment;
+    @Column
+    private Double totalPayment = 0.0;
 
-    @Column(nullable = false)
-    private Double totalYourExpense;
+    @Column
+    private Double totalYouGetBack = 0.0;
 
-    @Column(nullable = false)
-    private Double totalYouGetBack;
-
-    @Column(nullable = false)
-    private Double totalYouOwe;
+    @Column
+    private Double totalYouOwe = 0.0;
 
     @OneToMany(mappedBy = "balanceSheet", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Balance> balances;

@@ -26,7 +26,7 @@ public class ExpensePayment {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false)
+    @Column
     private Double amountPaid;
 
     public ExpensePayment(User user, Double amountPaid) {

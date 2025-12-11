@@ -14,7 +14,6 @@ import java.util.Map;
 public class BalanceSheetResponse {
     private String userId;
     private Double totalPayment;
-    private Double totalYourExpense;
     private Double totalYouGetBack;
     private Double totalYouOwe;
     private Map<String, BalanceDetail> userVsBalance;
