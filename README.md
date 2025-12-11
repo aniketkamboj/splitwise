@@ -53,6 +53,27 @@ A comprehensive expense splitting application built with Spring Boot, following 
 - `GET /api/balance-sheets/{userId}/summary` - Get net balance summary for a user
 
 
+## Database Design
+
+```mermaid
+graph TD
+    USER -- "one-to-many (owes via splits)" --> SPLIT
+    USER -- "one-to-many (pays expenses)" --> EXPENSE_PAYMENT
+    USER -- "one-to-one (owns)" --> USER_EXPENSE_BALANCE_SHEET
+    USER_EXPENSE_BALANCE_SHEET -- "one-to-many (per counterparty)" --> BALANCE
+    GROUP -- "many-to-many (members)" --- USER
+    GROUP -- "many-to-one (created by)" --> USER
+    GROUP -- "one-to-many (has expenses)" --> EXPENSE
+    EXPENSE -- "many-to-one (belongs to group)" --> GROUP
+    EXPENSE -- "one-to-many (payments)" --> EXPENSE_PAYMENT
+    EXPENSE -- "one-to-many (splits)" --> SPLIT
+```
+
+- `User` owns one `UserExpenseBalanceSheet` and participates in many `Split` and `ExpensePayment` records.
+- `Group` has many `Expense` entries, tracks members through the `group_members` join table, and references a creator `User`.
+- `Expense` belongs to a `Group`, aggregates many `Split` rows (who owes) and `ExpensePayment` rows (who paid).
+- `UserExpenseBalanceSheet` aggregates many `Balance` rows, each keyed by another user ID indicating how much is owed or receivable.
+
 ## Project Structure
 
 ```
