@@ -74,6 +74,12 @@ graph TD
 - `Expense` belongs to a `Group`, aggregates many `Split` rows (who owes) and `ExpensePayment` rows (who paid).
 - `UserExpenseBalanceSheet` aggregates many `Balance` rows, each keyed by another user ID indicating how much is owed or receivable.
 
+## Why PostgreSQL (vs MongoDB)
+
+- **Relational graph**: Users, groups, expenses, payments, and balances are tightly linked; SQL joins and normalized tables make these relationships explicit and efficient.
+- **Strong integrity**: Foreign keys, unique constraints, and check constraints keep balances consistent and prevent orphaned splits or payments.
+- **Transactional safety**: Multi-row, multi-table updates (e.g., creating an expense and updating all member balances) stay ACID-compliant, avoiding partial writes.
+
 ## Project Structure
 
 ```
