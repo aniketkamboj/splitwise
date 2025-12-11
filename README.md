@@ -49,6 +49,8 @@ A comprehensive expense splitting application built with Spring Boot, following 
 ### Balance Sheet
 
 - `GET /api/balance-sheets/{userId}` - Get balance sheet for a user
+- `GET /api/balance-sheets/{userId}/outstanding` - Get totals you owe vs receive
+- `GET /api/balance-sheets/{userId}/summary` - Get net balance summary for a user
 
 
 ## Project Structure
